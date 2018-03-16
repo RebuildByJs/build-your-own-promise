@@ -1,16 +1,18 @@
 /**
- * Promise build by zhangxiang
+ * Builded By zhangxiang on 2018/03
  */
+
+const PENDING = 0;
+const ONFULFILLED = 1;
+const ONREJECTED = 2;
+const nextTick = process.nextTick;
+
 module.exports = class Promise {
   constructor(fn) {
-    if(!(this instanceof Promise)) return new Promise();
+    if(!(this instanceof Promise)) return new Promise(fn);
     
-    // 内部状态 status
-    this.status = 'pending';
+    this.status = PENDING;
     
-    /**
-     * 内部变量用 _ 开头
-     */
     function _resolve() {
 
     }
@@ -19,14 +21,25 @@ module.exports = class Promise {
 
     }
 
+    fn(_resolve, _reject);
+    
     return this;
   }
   
   then(onFulfilled, onRejected) {
 
+    return new Promise();
   }
 
   catch() {
+
+  }
+
+  resolve() {
+
+  }
+
+  reject() {
 
   }
 
