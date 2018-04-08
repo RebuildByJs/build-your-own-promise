@@ -12,23 +12,60 @@ module.exports = class Promise {
     if(!(this instanceof Promise)) return new Promise(fn);
     
     this.status = PENDING;
+    this.taskQueue = [];
     
-    function _resolve() {
-
+    function _resolve(res) {
+      this.status = ONFULFILLED;
+      this.data = res;
+      for (let task of this.taskQueue) {
+        let func = task.resolve;
+        func(this.data);
+      }
+      this.taskQueue = [];
     }
 
-    function _reject() {
-
+    function _reject(res) {
+      this.status = ONREJECTED;
+      this.data = res;
+      for (let task of this.taskQueue) {
+        let func = task.reject;
+        func(this.data);
+      }
+      this.taskQueue = [];
     }
+
+    _resolve = _resolve.bind(this);
+    _reject = _reject.bind(this);
 
     fn(_resolve, _reject);
     
     return this;
   }
   
-  then(onFulfilled, onRejected) {
+  static next({ onFulfilled, onRejected }) {
+    if (ONFULFILLED === this.status) {
+      onFulfilled(this.data);
+    } else if (ONREJECTED === this.status) {
+      onRejected(this.data);
+    } else {
+      this.taskQueue.push({ resolve: onFulfilled, reject: onRejected });
+    }
+  }
 
-    return new Promise();
+  then(onFulfilled, onRejected) {
+    const next = Promise.next.bind(this);
+    return new Promise((resolve, reject) => {
+      next({
+        onFulfilled: (res) => {
+          let result = onFulfilled(res);
+          resolve(result);
+        },
+        onRejected: (err) => {
+          let error = onRejected(err);
+          reject(error);
+        }
+      });
+    });
   }
 
   catch() {
