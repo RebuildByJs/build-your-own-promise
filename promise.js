@@ -47,12 +47,16 @@ module.exports = class Promise {
   }
   
   static next({ onFulfilled, onRejected }) {
+
+    if (PENDING === this.status) {
+      this.taskQueue.push({ resolve: onFulfilled, reject: onRejected });
+      return;
+    }
+
     if (ONFULFILLED === this.status) {
       onFulfilled(this.data);
     } else if (ONREJECTED === this.status) {
       onRejected(this.data);
-    } else {
-      this.taskQueue.push({ resolve: onFulfilled, reject: onRejected });
     }
   }
 
@@ -73,10 +77,10 @@ module.exports = class Promise {
   }
 
   catch(fn) {
-
+    
   }
 
-  resolve(fn) {
+  static resolve(arg) {
     return new Promise((resolve, reject) => {
       try {
         resolve(fn());
@@ -86,7 +90,7 @@ module.exports = class Promise {
     });
   }
 
-  reject(fn) {
+  static reject(arg) {
     return new Promise((resolve, reject) => {
       try {
         reject(fn());
@@ -96,56 +100,51 @@ module.exports = class Promise {
     });
   }
 
-  all(promises) {
+  static all(promises) {
     if(!Array.isArray(promises)) {
       console.error('Promise.all arguments must be an array.');
       return;
     }
-    for (let promise of promies) {
-      if (!(promise instanceof Promise)) {
-        console.log('variable must be a Promise instance.');
-        return;
-      }
-    }
+
+    const results = [];
 
     return new Promise((resolve, reject) => {
-      let next = Promise.next.bind(this);
-      next({
-        onFulfilled: () => {
-
-        },
-        onRejected: () => {
-
+      promises.forEach((promise, i) => {
+        if (!(promise instanceof Promise)) {
+          console.log('variable must be a Promise instance.');
+          return;
         }
+        promise.then((res) => {
+          results[i] = res;
+          if (results.length === promises.length) {
+            resolve(results);
+            return;
+          }
+        }, (err) => {
+          reject(err);
+        });
       });
     });
   }
 
-  race(promises) {
+  static race(promises) {
     if(!Array.isArray(promises)) {
       console.error('Promise.all arguments must be an array.');
       return;
     }
-    for (let promise of promies) {
-      if (!(promise instanceof Promise)) {
-        console.log('variable must be a Promise instance.');
-        return;
-      }
-    }
 
     return new Promise((resolve, reject) => {
-      let next = Promise.next.bind(this);
-      next({
-        onFulfilled: () => {
-          
-        },
-        onRejected: () => {
-
+      promises.forEach((promise, i) => {
+        if (!(promise instanceof Promise)) {
+          console.log('variable must be a Promise instance.');
+          return;
         }
+        promise.then((res) => {
+          resolve(res);
+        }, (err) => {
+          reject(err);
+        });
       });
     });
   }
 };
-
-
-function noop() {}
