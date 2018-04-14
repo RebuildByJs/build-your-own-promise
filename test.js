@@ -39,3 +39,9 @@ var p3 = new Promise((resolve, reject) => {
 
 Promise.all([p1, p2, p3]).then((res) => { console.log(res); }, (err) => { console.log(err); });
 Promise.race([p1, p2, p3]).then((res) => { console.log('rate', res); }, (err) => { console.log(err); });
+
+
+Promise.resolve('test resolve').then((res) => { console.log(res); });
+Promise.reject('fuck you').then((err) => { console.log('not here'); }, (err) => { console.log(err); });
+
+console.log('finally', Promise.resolve(1).finally(() => {}));

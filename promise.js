@@ -77,26 +77,38 @@ module.exports = class Promise {
   }
 
   catch(fn) {
-    
+    return this.then(null, fn);
+  }
+
+  finally(fn) {
+    return this.then((res) => {
+      return Promise.resolve(fn()).then(() => res);
+    }, (err) => {
+      return Promise.reject(fn()).then(() => err);
+    });
   }
 
   static resolve(arg) {
     return new Promise((resolve, reject) => {
-      try {
-        resolve(fn());
-      } catch (err) {
-        reject(err);
+      if (arg instanceof Promise) {
+        return arg;
       }
+      if (arg && arg.then && typeof arg.then === 'function') {
+        return new Promise(arg.then);
+      }
+      resolve(arg);
     });
   }
 
   static reject(arg) {
     return new Promise((resolve, reject) => {
-      try {
-        reject(fn());
-      } catch (err) {
-        reject(err);
+      if (arg instanceof Promise) {
+        return arg;
       }
+      if (arg.then && typeof arg.then === 'function') {
+        return new Promise(arg.then);
+      }
+      reject(arg);
     });
   }
 
@@ -129,7 +141,7 @@ module.exports = class Promise {
 
   static race(promises) {
     if(!Array.isArray(promises)) {
-      console.error('Promise.all arguments must be an array.');
+      console.error('Promise.race arguments must be an array.');
       return;
     }
 
