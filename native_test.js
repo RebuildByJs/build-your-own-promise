@@ -1,7 +1,6 @@
-const Promise = require('./promise.js');
-
 var p = new Promise((resolve, reject) => {
   setTimeout(() => {
+    console.log('?????');
     resolve(1);
     resolve(2);
   }, 1000);

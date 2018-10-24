@@ -6,14 +6,13 @@ const PENDING = 0;
 const ONFULFILLED = 1;
 const ONREJECTED = 2;
 const nextTick = process.nextTick;
-
-module.exports = class Promise {
+class Promise {
   constructor(fn) {
     if(!(this instanceof Promise)) return new Promise(fn);
     
     this.status = PENDING;
     this.taskQueue = [];
-    
+    // _resolve 函数与 _reject 函数需要被作为函数调用，也就是说内部没有 this 值调用
     function _resolve(res) {
       this.status = ONFULFILLED;
       this.data = res;
@@ -62,6 +61,8 @@ module.exports = class Promise {
 
   then(onFulfilled, onRejected) {
     const next = Promise.next.bind(this);
+    if (typeof onFulfilled !== 'function') { onFulfilled = () => {};}
+    if (typeof onRejected !== 'function') { onRejected = () => {};}
     return new Promise((resolve, reject) => {
       next({
         onFulfilled: (res) => {
@@ -160,3 +161,28 @@ module.exports = class Promise {
     });
   }
 };
+
+Promise.deferred = function () {
+  var global = {};
+
+  var promise = new Promise(function (onResolve, onReject) {
+    global.onResolve = onResolve;
+    global.onReject = onReject;
+  });
+
+  var resolve = function (value) {
+    global.onResolve(value);
+  };
+
+  var reject = function (reason) {
+    global.onReject(reason);
+  }
+
+  return {
+    promise,
+    resolve,
+    reject
+  }
+}
+
+module.exports = Promise;
