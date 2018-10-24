@@ -2,6 +2,7 @@ const Promise = require('./promise.js');
 
 var p = new Promise((resolve, reject) => {
   setTimeout(() => {
+    console.log('first');
     resolve(1);
     resolve(2);
   }, 1000);
@@ -9,12 +10,11 @@ var p = new Promise((resolve, reject) => {
 
 
 p.then((res) => {
+  console.log('res', res);
   console.log(res);
 }).then(() => {
   console.log('second then');
 });
-
-console.log('???');
 
 var p1 = new Promise((resolve, reject) => {
   setTimeout(() => {

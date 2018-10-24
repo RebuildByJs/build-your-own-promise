@@ -7,10 +7,16 @@ var p = new Promise((resolve, reject) => {
 });
 
 
-p.then((res) => {
+let testP = p.then((res) => {
   console.log(res);
+  return 'test';
 }).then(() => {
   console.log('second then');
+});
+
+testP.then(v => {
+  console.log('testP');
+  console.log(v);
 });
 
 console.log('???');
