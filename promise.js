@@ -88,12 +88,20 @@ class Promise {
         return new Promise((resolve, reject) => {
             next({
                 onFulfilled: (res) => {
-                    let result = onFulfilled(res);
-                    resolve(result);
+                    try {
+                        let result = onFulfilled(res);
+                        resolve(result);
+                    } catch (err) {
+                        reject(err);
+                    }
                 },
                 onRejected: (err) => {
-                    let error = onRejected(err);
-                    reject(error);
+                    try {
+                        let error = onRejected(err);
+                        reject(error);
+                    } catch (err) {
+                        reject(err);
+                    }
                 }
             });
         });
