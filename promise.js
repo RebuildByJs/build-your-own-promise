@@ -62,6 +62,30 @@ class Promise {
         return this;
     }
 
+    static resolveResponse(promise, x, resolve, reject) {
+        if (promise === x) {
+            throw new TypeError('Cycle Error');
+        }
+        if (x !== null && (typeof x == 'object' || typeof x == 'function')) {
+            try {
+                let then = x.then;
+                if (then && typeof then == 'function') {
+                    then.call(x, function () {
+
+                    }, function() {
+                        
+                    });
+                } else {
+                    resolve(x);
+                }
+            } catch (err) {
+                reject(err);
+            }
+        } else {
+            resolve(x);
+        }
+    }
+
     static next({ onFulfilled, onRejected }) {
         if (PENDING === this.status) {
             this.taskQueue.push({ resolve: onFulfilled, reject: onRejected });
