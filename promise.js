@@ -26,6 +26,7 @@ class Promise {
          */
         let status = this.status = PENDING;
         let value = this.value =  void 0;
+        let reason = this.reason = void 0;
         let taskQueue = this.taskQueue = [];
         // _resolve 函数与 _reject 函数需要被作为函数调用，也就是说内部没有 this 值调用
         function _resolve(res) {
@@ -46,39 +47,65 @@ class Promise {
             // 同上
             if (status === PENDING) {
                 status = REJECTED;
-                value = res;
+                reason = res;
                 nextTick(() => {
                     for (let task of taskQueue) {
                         let func = task.reject;
-                        func(value);
+                        func(reason);
                     }
                     taskQueue = [];
                 });
             }
         }
-
-        fn(_resolve, _reject);
+        try {
+            fn(_resolve, _reject);
+        } catch (err) {
+            _reject(err);
+        }
     
         return this;
     }
-
-    static resolveResponse(promise, x, resolve, reject) {
+    /**
+     * 让 then 函数适应各种函数返回值
+     * @param {*} promise then 函数返回的新的 Promise
+     * @param {*} x 
+     * @param {*} resolve 
+     * @param {*} reject 
+     */
+    static resolvePromise(promise, x, resolve, reject) {
         if (promise === x) {
             throw new TypeError('Cycle Error');
         }
-        if (x !== null && (typeof x == 'object' || typeof x == 'function')) {
+        let called = false;
+        if (x instanceof Promise) {
+            if (x.status === PENDING) {
+                x.then(y => {
+                    this.resolvePromise(promise, y, resolve, reject)
+                }, reason => {
+                    reject(reason);
+                });
+            } else {
+                x.then(resolve, reject);
+            }
+        } else if (x !== null && (typeof x == 'object' || typeof x == 'function')) {
             try {
                 let then = x.then;
                 if (then && typeof then == 'function') {
-                    then.call(x, function () {
-
-                    }, function() {
-                        
+                    then.call(x, y => {
+                        if (called) return;
+                        called = true;
+                        this.resolvePromise(promise, y, resolve, reject);
+                    }, reason => {
+                        if (called) return;
+                        called = true;
+                        reject(reason);
                     });
                 } else {
                     resolve(x);
                 }
             } catch (err) {
+                if (called) return;
+                called = true;
                 reject(err);
             }
         } else {
@@ -86,49 +113,62 @@ class Promise {
         }
     }
 
-    static next({ onFulfilled, onRejected }) {
-        if (PENDING === this.status) {
-            this.taskQueue.push({ resolve: onFulfilled, reject: onRejected });
-            return;
-        }
-
-        if (FULFILLED === this.status) {
-            onFulfilled(this.value);
-        } else if (REJECTED === this.status) {
-            onRejected(this.value);
-        }
-    }
-
     then(onFulfilled, onRejected) {
-        const next = Promise.next.bind(this);
         /**
          * 如果不是函数需要忽略它
          */
-        if (typeof onFulfilled !== 'function') { onFulfilled = () => {};}
-        if (typeof onRejected !== 'function') { onRejected = () => {};}
+        if (typeof onFulfilled !== 'function') onFulfilled = val => val;
+        if (typeof onRejected !== 'function') onRejected = reason => { throw reason; };
         /**
          * then 方法必须返回一个 promise 对象
          */
-        return new Promise((resolve, reject) => {
-            next({
-                onFulfilled: (res) => {
-                    try {
-                        let result = onFulfilled(res);
-                        resolve(result);
-                    } catch (err) {
-                        reject(err);
+        let newPromise;
+        if (this.status === PENDING) {
+            return newPromise = new Promise((resolve, reject) => {
+                this.taskQueue.push({
+                    resolve: value => {
+                        try {
+                            let x = onFulfilled(value);
+                            Promise.resolvePromise(newPromise, x, resolve, reject);
+                        } catch (err) {
+                            reject(err);
+                        }
+                    },
+                    reject: reason => {
+                        try {
+                            let x = onRejected(reason);
+                            Promise.resolvePromise(newPromise, x, resolve, reject);
+                        } catch (err) {
+                            reject(err);
+                        }
                     }
-                },
-                onRejected: (err) => {
-                    try {
-                        let error = onRejected(err);
-                        reject(error);
-                    } catch (err) {
-                        reject(err);
-                    }
-                }
+                });
             });
-        });
+        }
+        if (this.status === REJECTED) {
+            return newPromise = new Promise((resolve, reject) => {
+                nextTick(() => {
+                    try {
+                        let x = onRejected(this.reason);
+                        Promise.resolvePromise(newPromise, x, resolve, reject);
+                    } catch (err) {
+                        reject(err);
+                    }
+                });
+            });
+        }
+        if (this.status === FULFILLED) {
+            return newPromise = new Promise((resolve, reject) => {
+                nextTick(() => {
+                    try {
+                        let x = onFulfilled(this.value);
+                        Promise.resolvePromise(newPromise, x, resolve, reject);
+                    } catch (err) {
+                        reject(err);
+                    }
+                });
+            });
+        }
     }
 
     catch(fn) {
