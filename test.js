@@ -1,47 +1,60 @@
 const Promise = require('./promise.js');
 
-var p = new Promise((resolve, reject) => {
-  setTimeout(() => {
-    console.log('first');
-    resolve(1);
-    resolve(2);
-  }, 1000);
+let second = new Promise((resolve, reject) => {
+  resolve(1);
 });
 
+let first = new Promise((resolve, reject) => {
+  resolve(second);
+});
 
-p.then((res) => {
-  console.log('res', res);
+first.then(res => {
+  console.log(typeof res);
   console.log(res);
-}).then(() => {
-  console.log('second then');
 });
 
-var p1 = new Promise((resolve, reject) => {
-  setTimeout(() => {
-    console.log('p1');
-    resolve(1);
-  }, 1000);
-});
-
-var p2 = new Promise((resolve, reject) => {
-  setTimeout(() => {
-    console.log('p2');
-    resolve(2);
-  }, 2000);
-});
-
-var p3 = new Promise((resolve, reject) => {
-  setTimeout(() => {
-    console.log('p3');
-    resolve(3);
-  }, 3000);
-});
-
-Promise.all([p1, p2, p3]).then((res) => { console.log(res); }, (err) => { console.log(err); });
-Promise.race([p1, p2, p3]).then((res) => { console.log('rate', res); }, (err) => { console.log(err); });
+// var p = new Promise((resolve, reject) => {
+//   setTimeout(() => {
+//     console.log('first');
+//     resolve(1);
+//     resolve(2);
+//   }, 1000);
+// });
 
 
-Promise.resolve('test resolve').then((res) => { console.log(res); });
-Promise.reject('fuck you').then((err) => { console.log('not here'); }, (err) => { console.log(err); });
+// p.then((res) => {
+//   console.log('res', res);
+//   console.log(res);
+// }).then(() => {
+//   console.log('second then');
+// });
 
-console.log('finally', Promise.resolve(1).finally(() => {}));
+// var p1 = new Promise((resolve, reject) => {
+//   setTimeout(() => {
+//     console.log('p1');
+//     resolve(1);
+//   }, 1000);
+// });
+
+// var p2 = new Promise((resolve, reject) => {
+//   setTimeout(() => {
+//     console.log('p2');
+//     resolve(2);
+//   }, 2000);
+// });
+
+// var p3 = new Promise((resolve, reject) => {
+//   setTimeout(() => {
+//     console.log('p3');
+//     resolve(3);
+//   }, 3000);
+// });
+
+// Promise.all([p1, p2, p3]).then((res) => { console.log(res); }, (err) => { console.log(err); });
+// Promise.race([p1, p2, p3]).then((res) => { console.log('rate', res); }, (err) => { console.log(err); });
+
+
+// Promise.resolve('test resolve').then((res) => { console.log(res); });
+// Promise.reject('fuck you').then((err) => { console.log('not here'); }, (err) => { console.log(err); });
+
+// console.log('finally', Promise.resolve(1).finally(() => {}));

@@ -30,6 +30,20 @@ class Promise {
         let taskQueue = this.taskQueue = [];
         // _resolve 函数与 _reject 函数需要被作为函数调用，也就是说内部没有 this 值调用
         function _resolve(res) {
+            // 正确实现
+            /**
+             * 意思就是，遇到是一个鸭子还不行，thenable 还是需要再包一层 Promise
+             * 也就是经典的问题 resolve(Promise.resolve()) 里面干了啥
+             * if (res && typeof res.then === 'function') {
+             *  new Promise((_res, _rej) => {
+             *      res.then(_res, _rej);
+             *  }).then(_resolve, _reject);
+             * }
+             */
+            // 错误实现
+            if (res instanceof Promise) { // 靠他妈的！！！这里实现居然不是这个鸟样
+                return res.then(_resolve, _reject);
+            }
             // 这里添加 PENDING 判断是为了防止 resolve 执行多次，规范规定 reoslve 不能执行多于一次
             if (status === PENDING) {
                 status = FULFILLED;
